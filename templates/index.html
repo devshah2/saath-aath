@@ -161,6 +161,23 @@
             height: 84px;
         }
 
+        .card-stack.has-underneath::before {
+            content: '';
+            position: absolute;
+            top: 3px;
+            left: 3px;
+            width: 60px;
+            height: 84px;
+            background: #333;
+            border: 2px solid #555;
+            border-radius: 6px;
+            z-index: -1;
+        }
+
+        .card-stack.has-underneath .card {
+            box-shadow: 3px 3px 8px rgba(0,0,0,0.4);
+        }
+
         .card {
             width: 60px;
             height: 84px;
@@ -828,7 +845,12 @@
             player.table.forEach(stack => {
                 const stackEl = document.createElement('div');
                 stackEl.className = 'card-stack';
-                
+
+                // Add visual indicator if there's a card underneath
+                if (stack.face_up && stack.face_down) {
+                    stackEl.classList.add('has-underneath');
+                }
+
                 if (stack.face_up) {
                     const isPlayable = isCurrentPlayer && isMyTurn && isValidPlay(stack.face_up);
                     const cardEl = createCardElement(stack.face_up, isPlayable);
@@ -838,7 +860,7 @@
                     const cardEl = createCardElement(stack.face_down, false, true);
                     stackEl.appendChild(cardEl);
                 }
-                
+
                 containerEl.appendChild(stackEl);
             });
         }
