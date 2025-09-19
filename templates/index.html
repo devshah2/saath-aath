@@ -1,0 +1,962 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Saat-Aath - Two Player Card Game</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: Arial, sans-serif;
+            background: linear-gradient(135deg, #0f4c3a, #2d5a27);
+            min-height: 100vh;
+            padding: 20px;
+            color: white;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 20px;
+        }
+
+        .game-info {
+            background: rgba(255, 255, 255, 0.1);
+            padding: 15px;
+            border-radius: 10px;
+            margin-bottom: 20px;
+            text-align: center;
+        }
+
+        .player-selection {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+
+        .connection-status {
+            background: rgba(255, 255, 255, 0.1);
+            padding: 15px;
+            border-radius: 10px;
+            margin-bottom: 20px;
+            text-align: center;
+        }
+
+        .btn {
+            background: #4CAF50;
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            margin: 5px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 16px;
+            transition: background-color 0.3s;
+        }
+
+        .btn:hover {
+            background: #45a049;
+        }
+
+        .btn:disabled {
+            background: #666;
+            cursor: not-allowed;
+        }
+
+        .btn.secondary {
+            background: #2196F3;
+        }
+
+        .btn.secondary:hover {
+            background: #1976D2;
+        }
+
+        .trump-selection {
+            text-align: center;
+            margin: 20px 0;
+            display: none;
+        }
+
+        .trump-selection.show {
+            display: block;
+        }
+
+        .trump-buttons {
+            margin: 10px 0;
+        }
+
+        .trump-btn {
+            background: white;
+            color: black;
+            margin: 5px;
+            padding: 10px 20px;
+            border: 2px solid #333;
+            border-radius: 6px;
+            font-size: 18px;
+            cursor: pointer;
+        }
+
+        .trump-btn:hover {
+            background: #f0f0f0;
+        }
+
+        .trump-btn.hearts { color: red; }
+        .trump-btn.diamonds { color: red; }
+        .trump-btn.clubs { color: black; }
+        .trump-btn.spades { color: black; }
+
+        .game-board {
+            display: none;
+            grid-template-columns: 1fr 300px;
+            gap: 20px;
+            min-height: 600px;
+        }
+
+        .game-board.show {
+            display: grid;
+        }
+
+        .play-area {
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 10px;
+            padding: 20px;
+            position: relative;
+        }
+
+        .opponent-area, .player-area {
+            margin-bottom: 20px;
+        }
+
+        .player-label {
+            font-weight: bold;
+            margin-bottom: 10px;
+            text-align: center;
+        }
+
+        .hand-cards {
+            display: flex;
+            justify-content: center;
+            gap: 5px;
+            margin-bottom: 15px;
+        }
+
+        .table-cards {
+            display: flex;
+            justify-content: center;
+            gap: 10px;
+            margin-bottom: 15px;
+        }
+
+        .card-stack {
+            position: relative;
+            width: 60px;
+            height: 84px;
+        }
+
+        .card {
+            width: 60px;
+            height: 84px;
+            border: 2px solid #333;
+            border-radius: 6px;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            align-items: center;
+            font-size: 12px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: transform 0.2s, box-shadow 0.2s;
+            position: relative;
+        }
+
+        .card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 5px 15px rgba(0,0,0,0.3);
+        }
+
+        .card.playable:hover {
+            transform: translateY(-10px);
+            box-shadow: 0 8px 20px rgba(0,0,0,0.4);
+        }
+
+        .card.face-down {
+            background: #4a4a4a;
+            color: transparent;
+        }
+
+        .card.face-up {
+            background: white;
+            color: black;
+        }
+
+        .card.red {
+            color: red;
+        }
+
+        .card.black {
+            color: black;
+        }
+
+        .card .rank {
+            font-size: 14px;
+            margin: 2px;
+        }
+
+        .card .suit {
+            font-size: 16px;
+            margin: 2px;
+        }
+
+        .trick-area {
+            text-align: center;
+            margin: 30px 0;
+            min-height: 100px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 20px;
+        }
+
+        .played-card {
+            position: relative;
+        }
+
+        .card-label {
+            position: absolute;
+            top: -25px;
+            left: 50%;
+            transform: translateX(-50%);
+            font-size: 12px;
+            background: rgba(0,0,0,0.7);
+            padding: 2px 6px;
+            border-radius: 4px;
+        }
+
+        .game-status {
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 10px;
+            padding: 20px;
+        }
+
+        .score-board {
+            margin-bottom: 20px;
+        }
+
+        .score-item {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 5px;
+        }
+
+        .current-trick {
+            margin-bottom: 20px;
+        }
+
+        .trump-info {
+            text-align: center;
+            margin-bottom: 20px;
+            padding: 10px;
+            background: rgba(255, 255, 255, 0.2);
+            border-radius: 6px;
+        }
+
+        .game-log {
+            height: 200px;
+            overflow-y: auto;
+            background: rgba(0, 0, 0, 0.3);
+            padding: 10px;
+            border-radius: 6px;
+            font-size: 12px;
+        }
+
+        .log-entry {
+            margin-bottom: 5px;
+            padding-bottom: 3px;
+            border-bottom: 1px solid rgba(255,255,255,0.1);
+        }
+
+        .winner-announcement {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: rgba(0, 0, 0, 0.9);
+            color: white;
+            padding: 30px;
+            border-radius: 15px;
+            text-align: center;
+            display: none;
+            z-index: 1000;
+        }
+
+        .winner-announcement.show {
+            display: block;
+        }
+
+        .rules-toggle {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            z-index: 100;
+        }
+
+        .rules-panel {
+            position: fixed;
+            top: 0;
+            right: -400px;
+            width: 400px;
+            height: 100vh;
+            background: rgba(0, 0, 0, 0.95);
+            color: white;
+            padding: 20px;
+            overflow-y: auto;
+            transition: right 0.3s;
+            z-index: 200;
+        }
+
+        .rules-panel.show {
+            right: 0;
+        }
+
+        .rules-panel h3 {
+            margin-bottom: 10px;
+            color: #4CAF50;
+        }
+
+        .rules-panel p {
+            margin-bottom: 10px;
+            line-height: 1.4;
+        }
+
+        .error-message {
+            background: #ff4444;
+            color: white;
+            padding: 10px;
+            border-radius: 6px;
+            margin: 10px 0;
+            text-align: center;
+        }
+
+        .share-link {
+            background: rgba(255, 255, 255, 0.1);
+            padding: 15px;
+            border-radius: 10px;
+            margin-bottom: 20px;
+            text-align: center;
+        }
+
+        .share-link input {
+            background: rgba(255, 255, 255, 0.9);
+            border: none;
+            padding: 8px;
+            border-radius: 4px;
+            width: 300px;
+            color: black;
+        }
+
+        @media (max-width: 768px) {
+            .game-board {
+                grid-template-columns: 1fr;
+            }
+            
+            .card {
+                width: 50px;
+                height: 70px;
+                font-size: 10px;
+            }
+            
+            .card .rank {
+                font-size: 12px;
+            }
+            
+            .card .suit {
+                font-size: 14px;
+            }
+            
+            .rules-panel {
+                width: 100vw;
+                right: -100vw;
+            }
+
+            .share-link input {
+                width: 100%;
+                max-width: 300px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>Saat-Aath</h1>
+            <p>Two-Player Indian Trick-Taking Game</p>
+        </div>
+
+        <div class="rules-toggle">
+            <button class="btn secondary" onclick="toggleRules()">Rules</button>
+        </div>
+
+        <div class="rules-panel" id="rulesPanel">
+            <h3>How to Play Saat-Aath</h3>
+            <p><strong>Objective:</strong> Dealer needs 7+ tricks, Non-dealer needs 8+ tricks to win.</p>
+            
+            <h3>Trump Cards</h3>
+            <p>• 7♥ is always the highest trump</p>
+            <p>• 7♠ is always the second highest trump</p>
+            <p>• Then trump suit cards: A, K, Q, J, 10, 9, 8</p>
+            
+            <h3>Card Rankings</h3>
+            <p><strong>Trump suit:</strong> 7♥, 7♠, A, K, Q, J, 10, 9, 8</p>
+            <p><strong>Other suits:</strong> A, K, Q, J, 10, 9, 8</p>
+            
+            <h3>Playing Rules</h3>
+            <p>• Must follow suit if possible (including 7♥ and 7♠ when trump is led)</p>
+            <p>• If can't follow suit, can play any card</p>
+            <p>• Higher card of led suit wins, or trump beats non-trump</p>
+            <p>• If different suits and no trump, first card wins</p>
+            
+            <h3>Setup</h3>
+            <p>• Each player gets 5 cards in hand + 5 stacks on table</p>
+            <p>• Non-dealer chooses trump after seeing their hand</p>
+            <p>• Non-dealer leads first trick</p>
+            
+            <button class="btn" onclick="toggleRules()">Close Rules</button>
+        </div>
+
+        <div class="share-link">
+            <p><strong>Share this link with your opponent:</strong></p>
+            <input type="text" id="shareLink" readonly onclick="this.select()">
+            <button class="btn secondary" onclick="copyLink()">Copy Link</button>
+        </div>
+
+        <div class="connection-status" id="connectionStatus">
+            <p>Connecting...</p>
+        </div>
+
+        <div class="player-selection" id="playerSelection">
+            <h2>Choose Your Role</h2>
+            <div>
+                <button class="btn" onclick="connectPlayer(1)" id="player1Btn">Player 1 (Dealer)</button>
+                <button class="btn" onclick="connectPlayer(2)" id="player2Btn">Player 2 (Non-Dealer)</button>
+            </div>
+            <p style="margin-top: 15px; font-size: 14px; opacity: 0.8;">
+                Player 1 is dealer and needs 7+ tricks to win<br>
+                Player 2 chooses trump suit and needs 8+ tricks to win
+            </p>
+        </div>
+
+        <div class="game-info" id="gameInfo" style="display: none;">
+            <p id="playerRole"></p>
+            <p id="waitingMessage"></p>
+        </div>
+
+        <div class="trump-selection" id="trumpSelection">
+            <h3>Choose Trump Suit</h3>
+            <p>Look at your hand cards and choose the trump suit:</p>
+            <div class="hand-cards" id="trumpHandCards" style="margin: 20px 0;"></div>
+            <div class="trump-buttons">
+                <button class="trump-btn hearts" onclick="chooseTrump('hearts')">♥ Hearts</button>
+                <button class="trump-btn diamonds" onclick="chooseTrump('diamonds')">♦ Diamonds</button>
+                <button class="trump-btn clubs" onclick="chooseTrump('clubs')">♣ Clubs</button>
+                <button class="trump-btn spades" onclick="chooseTrump('spades')">♠ Spades</button>
+            </div>
+        </div>
+
+        <div class="game-board" id="gameBoard">
+            <div class="play-area">
+                <div class="opponent-area">
+                    <div class="player-label" id="opponentLabel">Opponent</div>
+                    <div class="hand-cards" id="opponentHand"></div>
+                    <div class="table-cards" id="opponentTable"></div>
+                </div>
+
+                <div class="trick-area" id="trickArea">
+                    <p>Click a card to play it</p>
+                </div>
+
+                <div class="player-area">
+                    <div class="table-cards" id="playerTable"></div>
+                    <div class="hand-cards" id="playerHand"></div>
+                    <div class="player-label" id="playerLabel">You</div>
+                </div>
+            </div>
+
+            <div class="game-status">
+                <div class="trump-info" id="trumpInfo"></div>
+                
+                <div class="score-board">
+                    <h3>Score</h3>
+                    <div class="score-item">
+                        <span>Your tricks:</span>
+                        <span id="playerScore">0</span>
+                    </div>
+                    <div class="score-item">
+                        <span>Opponent tricks:</span>
+                        <span id="opponentScore">0</span>
+                    </div>
+                    <div class="score-item">
+                        <span>Current trick:</span>
+                        <span id="currentTrick">1/15</span>
+                    </div>
+                </div>
+
+                <div class="current-trick">
+                    <h3>Turn</h3>
+                    <p id="turnInfo">Waiting...</p>
+                </div>
+
+                <div class="game-log" id="gameLog"></div>
+
+                <button class="btn" onclick="resetGame()" style="width: 100%; margin-top: 15px;">New Game</button>
+            </div>
+        </div>
+
+        <div class="winner-announcement" id="winnerAnnouncement">
+            <h2 id="winnerText">Game Over!</h2>
+            <p id="winnerDetails"></p>
+            <button class="btn" onclick="resetGame()">Play Again</button>
+        </div>
+
+        <div class="error-message" id="errorMessage" style="display: none;"></div>
+    </div>
+
+    <script>
+        const GAME_ID = '{{ game_id }}';
+        const suitSymbols = {
+            'hearts': '♥',
+            'diamonds': '♦',
+            'clubs': '♣',
+            'spades': '♠'
+        };
+
+        let gameState = null;
+        let currentPlayer = null;
+        let pollInterval = null;
+
+        // Initialize
+        document.addEventListener('DOMContentLoaded', function() {
+            document.getElementById('shareLink').value = window.location.href;
+            updateConnectionStatus('Waiting for players to connect...');
+            startPolling();
+        });
+
+        function startPolling() {
+            pollInterval = setInterval(fetchGameState, 2000);
+        }
+
+        function stopPolling() {
+            if (pollInterval) {
+                clearInterval(pollInterval);
+                pollInterval = null;
+            }
+        }
+
+        async function fetchGameState() {
+            try {
+                const response = await fetch('/api/game_state');
+                if (response.ok) {
+                    const data = await response.json();
+                    gameState = data;
+                    updateUI();
+                } else if (response.status === 400) {
+                    // No session yet, show player selection
+                    showPlayerSelection();
+                }
+            } catch (error) {
+                console.error('Error fetching game state:', error);
+            }
+        }
+
+        function updateConnectionStatus(message) {
+            document.getElementById('connectionStatus').innerHTML = `<p>${message}</p>`;
+        }
+
+        function showError(message) {
+            const errorEl = document.getElementById('errorMessage');
+            errorEl.textContent = message;
+            errorEl.style.display = 'block';
+            setTimeout(() => {
+                errorEl.style.display = 'none';
+            }, 5000);
+        }
+
+        function showPlayerSelection() {
+            document.getElementById('connectionStatus').style.display = 'none';
+            document.getElementById('playerSelection').style.display = 'block';
+        }
+
+        async function connectPlayer(playerNum) {
+            try {
+                const response = await fetch('/api/connect', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        game_id: GAME_ID,
+                        player_num: playerNum
+                    })
+                });
+
+                if (response.ok) {
+                    const data = await response.json();
+                    currentPlayer = playerNum;
+                    gameState = data.game_state;
+                    
+                    document.getElementById('playerSelection').style.display = 'none';
+                    document.getElementById('gameInfo').style.display = 'block';
+                    
+                    const role = playerNum === 1 ? 'Dealer (needs 7+ tricks)' : 'Non-Dealer (needs 8+ tricks)';
+                    document.getElementById('playerRole').textContent = `You are Player ${playerNum} - ${role}`;
+                    
+                    updateUI();
+                } else {
+                    const error = await response.json();
+                    showError(error.error || 'Failed to connect to game');
+                }
+            } catch (error) {
+                showError('Network error. Please try again.');
+                console.error('Error connecting:', error);
+            }
+        }
+
+        async function chooseTrump(suit) {
+            try {
+                const response = await fetch('/api/choose_trump', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ suit })
+                });
+
+                if (response.ok) {
+                    const data = await response.json();
+                    gameState = data.game_state;
+                    updateUI();
+                } else {
+                    const error = await response.json();
+                    showError(error.error || 'Failed to choose trump');
+                }
+            } catch (error) {
+                showError('Network error. Please try again.');
+                console.error('Error choosing trump:', error);
+            }
+        }
+
+        async function playCard(card) {
+            try {
+                const response = await fetch('/api/play_card', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ card })
+                });
+
+                if (response.ok) {
+                    const data = await response.json();
+                    gameState = data.game_state;
+                    updateUI();
+                } else {
+                    const error = await response.json();
+                    showError(error.error || 'Invalid play');
+                }
+            } catch (error) {
+                showError('Network error. Please try again.');
+                console.error('Error playing card:', error);
+            }
+        }
+
+        async function resetGame() {
+            try {
+                const response = await fetch('/api/reset_game', {
+                    method: 'POST',
+                });
+
+                if (response.ok) {
+                    const data = await response.json();
+                    gameState = data.game_state;
+                    document.getElementById('winnerAnnouncement').classList.remove('show');
+                    updateUI();
+                } else {
+                    showError('Failed to reset game');
+                }
+            } catch (error) {
+                showError('Network error. Please try again.');
+                console.error('Error resetting game:', error);
+            }
+        }
+
+        function updateUI() {
+            if (!gameState || !currentPlayer) return;
+
+            const opponent = currentPlayer === 1 ? 2 : 1;
+            
+            // Update connection status
+            const p1Connected = gameState.players[1].connected;
+            const p2Connected = gameState.players[2].connected;
+            
+            if (!p1Connected || !p2Connected) {
+                updateConnectionStatus('Waiting for opponent to join...');
+                document.getElementById('waitingMessage').textContent = 'Waiting for opponent to connect...';
+                return;
+            }
+
+            document.getElementById('connectionStatus').style.display = 'none';
+            
+            // Handle different game phases
+            if (gameState.game_phase === 'trump_selection') {
+                if (currentPlayer === 2) {
+                    document.getElementById('trumpSelection').classList.add('show');
+                    document.getElementById('gameBoard').classList.remove('show');
+                    document.getElementById('waitingMessage').textContent = 'Choose your trump suit!';
+                    updateTrumpHandCards();
+                } else {
+                    document.getElementById('trumpSelection').classList.remove('show');
+                    document.getElementById('gameBoard').classList.add('show');
+                    document.getElementById('waitingMessage').textContent = 'Waiting for Player 2 to choose trump...';
+                }
+            } else if (gameState.game_phase === 'playing') {
+                document.getElementById('trumpSelection').classList.remove('show');
+                document.getElementById('gameBoard').classList.add('show');
+                document.getElementById('gameInfo').style.display = 'none';
+            } else if (gameState.game_phase === 'finished') {
+                showWinnerAnnouncement();
+            }
+
+            updateLabels();
+            updateGameBoard();
+        }
+
+        function updateLabels() {
+            const opponentNum = currentPlayer === 1 ? 2 : 1;
+            const playerRole = currentPlayer === 1 ? 'Dealer' : 'Non-Dealer';
+            const opponentRole = opponentNum === 1 ? 'Dealer' : 'Non-Dealer';
+            
+            document.getElementById('playerLabel').textContent = `You (Player ${currentPlayer} - ${playerRole})`;
+            document.getElementById('opponentLabel').textContent = `Opponent (Player ${opponentNum} - ${opponentRole})`;
+        }
+
+        function updateGameBoard() {
+            if (!gameState || gameState.game_phase !== 'playing') return;
+
+            const opponent = currentPlayer === 1 ? 2 : 1;
+
+            // Update trump info
+            if (gameState.trump) {
+                document.getElementById('trumpInfo').innerHTML = `
+                    <strong>Trump: ${suitSymbols[gameState.trump]} ${gameState.trump.charAt(0).toUpperCase() + gameState.trump.slice(1)}</strong><br>
+                    <small>7♥ and 7♠ are always top trumps</small>
+                `;
+            }
+
+            // Update scores
+            document.getElementById('playerScore').textContent = gameState.player_cards[currentPlayer].tricks;
+            document.getElementById('opponentScore').textContent = gameState.player_cards[opponent].tricks;
+            document.getElementById('currentTrick').textContent = `${gameState.current_trick_num}/15`;
+
+            // Update turn info
+            let turnText = '';
+            if (gameState.turn_player === currentPlayer) {
+                turnText = 'Your turn';
+            } else {
+                turnText = `Player ${gameState.turn_player}'s turn`;
+            }
+            document.getElementById('turnInfo').textContent = turnText;
+
+            // Update cards
+            updatePlayerHand();
+            updateOpponentHand();
+            updateTableCards(currentPlayer, 'playerTable');
+            updateTableCards(opponent, 'opponentTable');
+            updateTrickArea();
+            updateGameLog();
+        }
+
+        function updatePlayerHand() {
+            const handEl = document.getElementById('playerHand');
+            handEl.innerHTML = '';
+            
+            const player = gameState.player_cards[currentPlayer];
+            const isMyTurn = gameState.turn_player === currentPlayer;
+            
+            player.hand.forEach(card => {
+                const isPlayable = isMyTurn && isValidPlay(card);
+                const cardEl = createCardElement(card, isPlayable);
+                handEl.appendChild(cardEl);
+            });
+        }
+
+        function updateOpponentHand() {
+            const handEl = document.getElementById('opponentHand');
+            handEl.innerHTML = '';
+            
+            const opponent = currentPlayer === 1 ? 2 : 1;
+            const player = gameState.player_cards[opponent];
+            
+            player.hand.forEach(card => {
+                const cardEl = createCardElement(card, false, true);
+                handEl.appendChild(cardEl);
+            });
+        }
+
+        function updateTableCards(playerNum, containerId) {
+            const containerEl = document.getElementById(containerId);
+            containerEl.innerHTML = '';
+            
+            const player = gameState.player_cards[playerNum];
+            const isCurrentPlayer = playerNum === currentPlayer;
+            const isMyTurn = gameState.turn_player === currentPlayer;
+            
+            player.table.forEach(stack => {
+                const stackEl = document.createElement('div');
+                stackEl.className = 'card-stack';
+                
+                if (stack.face_up) {
+                    const isPlayable = isCurrentPlayer && isMyTurn && isValidPlay(stack.face_up);
+                    const cardEl = createCardElement(stack.face_up, isPlayable);
+                    stackEl.appendChild(cardEl);
+                } else if (stack.face_down && isCurrentPlayer) {
+                    // Show face down cards only for current player
+                    const cardEl = createCardElement(stack.face_down, false, true);
+                    stackEl.appendChild(cardEl);
+                }
+                
+                containerEl.appendChild(stackEl);
+            });
+        }
+
+        function updateTrickArea() {
+            const trickEl = document.getElementById('trickArea');
+            trickEl.innerHTML = '';
+            
+            if (gameState.current_trick.length === 0) {
+                trickEl.innerHTML = '<p>Click a card to play it</p>';
+            } else {
+                gameState.current_trick.forEach(play => {
+                    const cardContainer = document.createElement('div');
+                    cardContainer.className = 'played-card';
+                    
+                    const label = document.createElement('div');
+                    label.className = 'card-label';
+                    label.textContent = `Player ${play.player}`;
+                    cardContainer.appendChild(label);
+                    
+                    const cardEl = createCardElement(play.card);
+                    cardContainer.appendChild(cardEl);
+                    
+                    trickEl.appendChild(cardContainer);
+                });
+            }
+        }
+
+        function updateGameLog() {
+            const logEl = document.getElementById('gameLog');
+            logEl.innerHTML = '';
+            
+            gameState.game_log.forEach(entry => {
+                const entryEl = document.createElement('div');
+                entryEl.className = 'log-entry';
+                entryEl.textContent = entry;
+                logEl.appendChild(entryEl);
+            });
+            
+            logEl.scrollTop = logEl.scrollHeight;
+        }
+
+        function isValidPlay(card) {
+            // Simplified validation - server will do the real validation
+            return true;
+        }
+
+        function createCardElement(card, isPlayable = false, isHidden = false) {
+            const cardEl = document.createElement('div');
+            cardEl.className = `card ${isHidden ? 'face-down' : 'face-up'} ${['hearts', 'diamonds'].includes(card.suit) ? 'red' : 'black'}`;
+            
+            if (isPlayable) {
+                cardEl.classList.add('playable');
+                cardEl.onclick = () => playCard(card);
+            }
+            
+            if (!isHidden) {
+                cardEl.innerHTML = `
+                    <div class="rank">${card.rank}</div>
+                    <div class="suit">${suitSymbols[card.suit]}</div>
+                `;
+            } else {
+                cardEl.innerHTML = `
+                    <div class="rank">?</div>
+                    <div class="suit">?</div>
+                `;
+            }
+            
+            return cardEl;
+        }
+
+        function showWinnerAnnouncement() {
+            const p1Tricks = gameState.player_cards[1].tricks;
+            const p2Tricks = gameState.player_cards[2].tricks;
+            
+            let winnerText = 'Game Over!';
+            let winnerDetails = '';
+            
+            if (gameState.winner === 1) {
+                winnerText = 'Player 1 Wins!';
+                winnerDetails = `Player 1 (Non-dealer) wins with ${p1Tricks} tricks!`;
+            } else if (gameState.winner === 2) {
+                winnerText = 'Player 2 Wins!';
+                winnerDetails = `Player 2 (Dealer) wins with ${p2Tricks} tricks!`;
+            } else {
+                winnerText = 'Tie Game!';
+                winnerDetails = `Tie game! Player 1: ${p1Tricks}, Player 2: ${p2Tricks}`;
+            }
+            
+            document.getElementById('winnerText').textContent = winnerText;
+            document.getElementById('winnerDetails').textContent = winnerDetails;
+            document.getElementById('winnerAnnouncement').classList.add('show');
+        }
+
+        function toggleRules() {
+            const panel = document.getElementById('rulesPanel');
+            panel.classList.toggle('show');
+        }
+
+        function updateTrumpHandCards() {
+            if (!gameState || !currentPlayer) return;
+
+            const handEl = document.getElementById('trumpHandCards');
+            handEl.innerHTML = '';
+
+            const player = gameState.player_cards[currentPlayer.toString()];
+            if (player && player.hand) {
+                player.hand.forEach(card => {
+                    const cardEl = createCardElement(card, false);
+                    handEl.appendChild(cardEl);
+                });
+            }
+        }
+
+        function copyLink() {
+            const linkInput = document.getElementById('shareLink');
+            linkInput.select();
+            document.execCommand('copy');
+
+            const btn = document.querySelector('.btn.secondary');
+            const originalText = btn.textContent;
+            btn.textContent = 'Copied!';
+            setTimeout(() => {
+                btn.textContent = originalText;
+            }, 2000);
+        }
+    </script>
+</body>
+</html>
