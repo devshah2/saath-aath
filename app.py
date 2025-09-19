@@ -206,9 +206,16 @@ class SaatAathGame:
         return True
     
     def play_card(self, card, player_num):
+        print(f"play_card: card={card}")
+        print(f"play_card: player_num={player_num}, turn_player={self.state['turn_player']}")
+        print(f"play_card: game_phase={self.state['game_phase']}")
+        print(f"play_card: current_trick={self.state['current_trick']}")
+        print(f"play_card: is_valid_play={self.is_valid_play(card, player_num)}")
+
         if (player_num != self.state['turn_player'] or
             self.state['game_phase'] != 'playing' or
             not self.is_valid_play(card, player_num)):
+            print(f"play_card: FAILED - player_num={player_num}, turn_player={self.state['turn_player']}")
             return False
 
         player = self.state['player_cards'][str(player_num)]
@@ -388,14 +395,19 @@ def game_state():
 def choose_trump():
     data = request.get_json()
     suit = data.get('suit')
-    
-    game_id = session.get('game_id')
+
     player_num = session.get('player_num')
-    
-    if not game_id or player_num != 2:
-        return jsonify({'error': 'Unauthorized or invalid session'}), 400
-    
+
+    if player_num != 2:
+        return jsonify({'error': 'Only Player 2 can choose trump'}), 400
+
     current_game = get_or_create_game()
+
+    # Verify the session is valid for this player
+    session_id = session.get('session_id')
+    if current_game.state['players'][str(player_num)]['session_id'] != session_id:
+        return jsonify({'error': 'Session expired - please reconnect'}), 400
+
     success = current_game.choose_trump(suit, player_num)
 
     if success:
@@ -407,14 +419,19 @@ def choose_trump():
 def play_card():
     data = request.get_json()
     card = data.get('card')
-    
-    game_id = session.get('game_id')
+
     player_num = session.get('player_num')
-    
-    if not game_id or not player_num:
-        return jsonify({'error': 'Invalid session'}), 400
-    
+
+    if not player_num:
+        return jsonify({'error': 'No player session'}), 400
+
     current_game = get_or_create_game()
+
+    # Verify the session is valid for this player
+    session_id = session.get('session_id')
+    if current_game.state['players'][str(player_num)]['session_id'] != session_id:
+        return jsonify({'error': 'Session expired - please reconnect'}), 400
+
     success = current_game.play_card(card, player_num)
 
     if success:

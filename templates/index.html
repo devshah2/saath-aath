@@ -668,7 +668,15 @@
                     updateUI();
                 } else {
                     const error = await response.json();
-                    showError(error.error || 'Invalid play');
+                    if (error.error && error.error.includes('Session expired')) {
+                        showError('Session expired - reconnecting...');
+                        // Auto-reconnect
+                        setTimeout(() => {
+                            location.reload();
+                        }, 1000);
+                    } else {
+                        showError(error.error || 'Invalid play');
+                    }
                 }
             } catch (error) {
                 showError('Network error. Please try again.');
